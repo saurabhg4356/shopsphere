@@ -1,0 +1,82 @@
+services:
+  user-service:
+    build:
+      context: ./user-services
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: shopsphere-users
+    ports:
+      - "8001:8001"
+    volumes:
+      - user_data:/app/data
+    networks:
+      - shopsphere_net
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: shopsphere-products
+    ports:
+      - "8002:8002"
+    volumes:
+      - product_data:/app/data
+    networks:
+      - shopsphere_net
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: shopsphere-orders
+    ports:
+      - "8003:8003"
+    volumes:
+      - order_data:/app/data
+    networks:
+      - shopsphere_net
+    environment:
+      - PYTHONUNBUFFERED=1
+      - USER_SERVICE_URL=http://user-service:8001
+      - PRODUCT_SERVICE_URL=http://product-service:8002
+    restart: unless-stopped
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+networks:
+  shopsphere_net:
+    driver: bridge
+
+volumes:
+  user_data:
+  product_data:
+  order_data:
