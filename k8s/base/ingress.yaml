@@ -1,0 +1,66 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shopsphere-ingress
+  namespace: shopsphere
+  annotations:
+    # Tells AWS to create an Application Load Balancer (ALB)
+    kubernetes.io/ingress.class: alb
+
+    # internet-facing = public URL; internal = VPC-only
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    # Use IP mode — routes directly to pod IPs (faster than NodePort)
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # Health check path used by ALB to check pod health
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+
+    # HTTP only for now — add TLS in Step 7
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+
+    # Idle timeout for connections
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=60
+
+    # Tags for cost tracking
+    alb.ingress.kubernetes.io/tags: Project=shopsphere,Environment=dev
+
+spec:
+  rules:
+    - http:
+        paths:
+          # Route /users/* → user-services
+          - path: /users
+            pathType: Prefix
+            backend:
+              service:
+                name: user-services
+                port:
+                  number: 8001
+
+          # Route /products/* → product-service
+          - path: /products
+            pathType: Prefix
+            backend:
+              service:
+                name: product-service
+                port:
+                  number: 8002
+
+          # Route /orders/* → order-service
+          - path: /orders
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8003
+
+          # Health endpoints
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: user-services
+                port:
+                  number: 8001

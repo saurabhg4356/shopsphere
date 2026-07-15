@@ -1,0 +1,103 @@
+# ── Deployment ────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: shopsphere
+  labels:
+    app: user-services
+    version: v1
+spec:
+  replicas: 2                          # 2 pods = high availability across 2 nodes
+  selector:
+    matchLabels:
+      app: user-services
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0                # Zero-downtime deploy: never kill old pod before new is ready
+      maxSurge: 1                      # Spin up 1 extra pod during deploy
+  template:
+    metadata:
+      labels:
+        app: user-services
+        version: v1
+    spec:
+      containers:
+        - name: user-services
+          # Replace YOUR_ACCOUNT_ID and REGION with your values
+          # Get exact URL from: terraform output ecr_repository_urls
+          image: YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-user-services:latest
+          ports:
+            - containerPort: 8001
+          env:
+            - name: PYTHONUNBUFFERED
+              valueFrom:
+                configMapKeyRef:
+                  name: shopsphere-config
+                  key: PYTHONUNBUFFERED
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shopsphere-secrets
+                  key: DATABASE_URL
+
+          # Liveness probe: if this fails K8s restarts the pod
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+
+          # Readiness probe: pod only receives traffic when this passes
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # Resource limits: prevent one pod starving the node
+          resources:
+            requests:
+              cpu: "100m"              # 100 millicores = 0.1 vCPU
+              memory: "128Mi"
+            limits:
+              cpu: "500m"              # Max 0.5 vCPU
+              memory: "256Mi"
+
+      # Spread pods across different nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: ["user-services"]
+                topologyKey: kubernetes.io/hostname
+
+---
+# ── Service ───────────────────────────────────────────────────────────────────
+# ClusterIP: only reachable inside the cluster
+# The Ingress (below) exposes it externally
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-services
+  namespace: shopsphere
+  labels:
+    app: user-services
+spec:
+  selector:
+    app: user-services
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP

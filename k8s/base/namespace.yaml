@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shopsphere
+  labels:
+    app: shopsphere
+    managed-by: kubectl
