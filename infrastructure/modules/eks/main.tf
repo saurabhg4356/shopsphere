@@ -92,32 +92,47 @@ resource "aws_eks_cluster" "main" {
 
 # ── Managed Node Group ────────────────────────────────────────────────────────
 # AWS manages patching, scaling, and replacement of nodes
-resource "aws_eks_node_group" "main" {
-  cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.project_name}-nodes"
-  node_role_arn   = var.eks_node_role_arn
-  subnet_ids      = var.private_subnet_ids  # Nodes in private subnets
 
-  instance_types = [var.node_instance_type]
 
-  scaling_config {
-    desired_size = var.node_desired_count
-    min_size     = var.node_min_count
-    max_size     = var.node_max_count
-  }
+resource "aws_iam_role" "eks_fargate" {
+  name = "${var.project_name}-eks-fargate-role"
 
-  update_config {
-    max_unavailable = 1  # Rolling update — always keep at least N-1 nodes available
-  }
-
-  # Use the latest Amazon Linux 2 EKS-optimised AMI
-  ami_type = "AL2_x86_64"
-
-  labels = {
-    role = "application"
-  }
-
-  tags = merge(var.tags, {
-    Name = "${var.project_name}-node-group"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "eks-fargate-pods.amazonaws.com"
+      }
+    }]
   })
 }
+
+resource "aws_iam_role_policy_attachment" "eks_fargate_policy" {
+  role       = aws_iam_role.eks_fargate.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
+}
+
+resource "aws_eks_fargate_profile" "main" {
+  cluster_name           = aws_eks_cluster.main.name
+  fargate_profile_name   = "shopsphere-fargate"
+  pod_execution_role_arn = aws_iam_role.eks_fargate.arn
+  subnet_ids              = var.private_subnet_ids
+
+  selector {
+    namespace = "shopsphere"
+  }
+
+  selector {
+    namespace = "kube-system"
+  }
+
+  tags = {
+    Name        = "shopsphere-fargate"
+    Environment = "dev"
+    ManagedBy   = "terraform"
+    Project     = "shopsphere"
+  }
+}
+

@@ -126,3 +126,4 @@ resource "aws_iam_role_policy_attachment" "cicd_attach" {
   role       = aws_iam_role.cicd_deploy.name
   policy_arn = aws_iam_policy.cicd_policy.arn
 }
+

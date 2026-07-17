@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-product-service:latest
+          image: 922806890560.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-product-service:latest
           ports:
             - containerPort: 8002
           env:

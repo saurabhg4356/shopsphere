@@ -5,7 +5,7 @@ metadata:
   namespace: shopsphere
 data:
   # Inter-service URLs — uses Kubernetes DNS (service-name.namespace.svc.cluster.local)
-  # Short form works within the same namespace: http://user-service:8001
+  # Short form works within the same namespace: http://user-services:8001
   USER_SERVICE_URL: "http://user-services:8001"
   PRODUCT_SERVICE_URL: "http://product-service:8002"
   ORDER_SERVICE_URL: "http://order-service:8003"

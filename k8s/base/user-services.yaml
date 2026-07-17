@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-service
+  name: user-services
   namespace: shopsphere
   labels:
     app: user-services
@@ -27,7 +27,7 @@ spec:
         - name: user-services
           # Replace YOUR_ACCOUNT_ID and REGION with your values
           # Get exact URL from: terraform output ecr_repository_urls
-          image: YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-user-services:latest
+          image: 922806890560.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-user-services:latest
           ports:
             - containerPort: 8001
           env:

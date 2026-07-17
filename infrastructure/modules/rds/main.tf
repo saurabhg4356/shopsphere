@@ -40,7 +40,10 @@ resource "aws_db_instance" "main" {
   identifier = "${var.project_name}-postgres"
 
   engine         = "postgres"
-  engine_version = "17.8"
+  engine_version = "17.9"
+  lifecycle {
+    ignore_changes = [engine_version]
+  }
   instance_class = var.db_instance_class
 
   allocated_storage     = 20
