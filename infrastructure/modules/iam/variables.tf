@@ -8,7 +8,7 @@ variable "aws_account_id" {
 }
 
 variable "github_repo" {
-  description = "GitHub repo in owner/repo format e.g. your-username/shopsphere"
+  description = "repo:saurabhg4356/shopsphere:*"
   type        = string
 }
 
