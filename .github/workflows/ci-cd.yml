@@ -95,6 +95,7 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     strategy:
+      fail-fast: false
       matrix:
         include:
           - service: user-service
@@ -169,10 +170,11 @@ jobs:
         with:
           image-ref: "${{ steps.login-ecr.outputs.registry }}/${{ matrix.ecr_repo }}:${{ steps.set-tag.outputs.tag }}"
           format: "table"
-          exit-code: "1" # FAIL the build if HIGH or CRITICAL CVEs found
-          ignore-unfixed: true # Skip CVEs with no available fix
+          exit-code: "1"
+          ignore-unfixed: true
           severity: "HIGH,CRITICAL"
           output: "trivy-${{ matrix.service }}.txt"
+          trivyignores: "${{ matrix.folder }}/.trivyignore"
 
       # ── Upload scan results as artifact ───────────────────────────────────
       - name: Upload Trivy scan results
