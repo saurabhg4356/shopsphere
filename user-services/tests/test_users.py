@@ -9,8 +9,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from main import app
 from database import Base, get_db
 
-# Use in-memory SQLite for tests — fast, no external DB needed
-TEST_DB = "sqlite:///./test_users.db"
+TEST_DB_FILE = "test_users.db"
+TEST_DB = f"sqlite:///./{TEST_DB_FILE}"
+
+# Clean any leftover file from a previous run BEFORE creating the engine
+if os.path.exists(TEST_DB_FILE):
+    os.remove(TEST_DB_FILE)
+
 engine = create_engine(TEST_DB, connect_args={"check_same_thread": False})
 TestingSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -26,6 +31,13 @@ Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)
 
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_database():
+    yield
+    engine.dispose()  # release the file handle before deleting
+    if os.path.exists(TEST_DB_FILE):
+        os.remove(TEST_DB_FILE)
 
 def test_health():
     r = client.get("/health")
@@ -51,12 +63,13 @@ def test_list_users():
 
 def test_get_user_by_id():
     # Create first
-    create = client.post("/users", json={"name": "Raj Kumar", "email": "raj@test.dev"})
+    create = client.post("/users", json={"name": "Raj Kumar", "email": "sau231@test.dev"})
+    print(create.status_code, create.json()) 
     user_id = create.json()["id"]
     # Then fetch
     r = client.get(f"/users/{user_id}")
     assert r.status_code == 200
-    assert r.json()["email"] == "raj@test.dev"
+    assert r.json()["email"] == "sau231@test.dev"
 
 
 def test_get_user_not_found():

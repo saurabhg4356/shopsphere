@@ -11,3 +11,5 @@ crash.*.log
 __pycache__/
 *.pyc
 *.db
+
+*.db
