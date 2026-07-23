@@ -1,0 +1,5 @@
+# Vendored inside setuptools/_vendor/ - used only during package builds,
+# never imported/executed by the running application. No newer setuptools
+# release available upstream that updates these vendored copies as of 2026-07.
+CVE-2026-23949
+CVE-2026-24049
