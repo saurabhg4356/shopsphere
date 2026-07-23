@@ -273,7 +273,7 @@ jobs:
         run: |
           IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_USER_SERVICE }}:${{ steps.tag.outputs.tag }}"
           kubectl set image deployment/user-services \
-            user-service=${IMAGE} \
+            user-services=${IMAGE} \
             -n ${{ env.K8S_NAMESPACE }}
           kubectl rollout status deployment/user-services \
             -n ${{ env.K8S_NAMESPACE }} --timeout=120s
